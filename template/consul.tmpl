@@ -29,10 +29,9 @@ frontend www
     redirect scheme https if !{ ssl_fc }{{ end }}
 
     # Generated automatically by consul-template
-{{ range services }}
-    acl host_{{ .Name }} hdr_beg(host) -i {{ .Name }}.{{ or (env "HAPROXY_DOMAIN") "haproxy.service.consul" }}
-    use_backend {{ .Name }}_backend if host_{{ .Name }}
-{{ end }}
+{{ range services }}{{ $name := .Name }}{{ $prefix := or (env "APP_REGEX") "application-([a-z]+)" }}{{ if $name | regexMatch $prefix }}{{range ls "application"}}{{ if .Key | contains $name }}{{with $d := .Value | parseJSON}}{{if $d.publishWebPort}}
+    acl host_{{ $name }} hdr_beg(host) -i {{ $name }}.{{ $d.domain }}
+    use_backend {{ $name }}_backend if host_{{ $name }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}
 
 {{ if env "HAPROXY_STATS" }}
 frontend stats
@@ -43,11 +42,10 @@ frontend stats
 
 
 ### Consul-configured backend services ###
-{{ range services }}
-backend {{ .Name }}_backend
-{{ range service .Name }}
-   server {{ .Node }}-{{ .Port }} {{ .Address }}:{{ .Port }}{{ end }}
-{{ end }}
+{{ range services }}{{ $name := .Name }}{{ $prefix := or (env "APP_REGEX") "application-([a-z]+)" }}{{ if $name | regexMatch $prefix }}{{range ls "application"}}{{ if .Key | contains $name }}{{with $d := .Value | parseJSON}}{{if $d.publishWebPort}}
+backend {{ $name }}_backend
+{{ range service $name }}
+  server {{ .Node }}-{{ .Port }} {{ .Address }}:{{ .Port }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}
 
 {{ if env "HAPROXY_STATS" }}
 
