@@ -29,9 +29,9 @@ frontend www
     redirect scheme https if !{ ssl_fc }{{ end }}
 
     # Generated automatically by consul-template
-{{ range services }}{{ $name := .Name }}{{ $prefix := or (env "APP_REGEX") "application-([a-z]+)" }}{{ if $name | regexMatch $prefix }}{{range ls "application"}}{{ if .Key | contains $name }}{{with $d := .Value | parseJSON}}{{if $d.publishWebPort}}
-    acl host_{{ $name }} hdr_beg(host) -i {{ $d.domain }}
-    use_backend {{ $name }}_backend if host_{{ $name }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}
+{{ range services }}{{ $name := .Name }}{{ $prefix := or (env "APP_REGEX") "application-([a-z]+)" }}{{ if $name | regexMatch $prefix }}{{range ls "application"}}{{ if .Key | contains $name }}{{with $d := .Value | parseJSON}}{{if $d.publishWebPort}}{{range $domain := $d.domain}}
+    acl host_{{ $name }} hdr_beg(host) -i {{ $domain }}
+    use_backend {{ $name }}_backend if host_{{ $name }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}{{ end }}
 
 {{ if env "HAPROXY_STATS" }}
 frontend stats
